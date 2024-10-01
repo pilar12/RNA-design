@@ -1,0 +1,11 @@
+Workingdir: /work/dlclarge2/patilsh-aptamer-design/RNA-design/thirdparty/RNAformerOld
+Started at Tue Jun 18 06:43:44 PM CEST 2024
+Running job pdb using 2 cpus per node with given JID 11625160 on queue ml_gpu-rtx2080
+/home/patilsh/miniconda3/envs/aptamer/bin:/home/patilsh/miniconda3/condabin:/home/patilsh/miniconda3/bin:/home/patilsh/miniconda3/condabin:/home/patilsh/.vscode-server/bin/1a5daa3a0231a0fbba4f14db7ec463cf99d7768e/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+Model size: 31741954
+Processing  pdb_ts1_test_preds.pt
+Processing  pdb_ts2_test_preds.pt
+Processing  pdb_ts3_test_preds.pt
+Processing  pdb_ts_hard_test_preds.pt
+Job execution complete.
+Runtime: 502

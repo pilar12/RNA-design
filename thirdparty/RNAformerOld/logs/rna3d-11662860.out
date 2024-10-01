@@ -1,0 +1,8 @@
+Workingdir: /work/dlclarge2/patilsh-aptamer-design/RNA-design/thirdparty/RNAformerOld
+Started at Mon Jul  8 06:59:18 AM CEST 2024
+Running job rna3d using 2 cpus per node with given JID 11662860 on queue ml_gpu-rtx2080
+/home/patilsh/miniconda3/envs/aptamer/bin:/home/patilsh/miniconda3/condabin:/home/patilsh/miniconda3/bin:/home/patilsh/miniconda3/condabin:/home/patilsh/.vscode-server/bin/1a5daa3a0231a0fbba4f14db7ec463cf99d7768e/bin/remote-cli:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games
+Model size: 31741954
+Processing  rna3d_test_preds.pt
+Job execution complete.
+Runtime: 1389
