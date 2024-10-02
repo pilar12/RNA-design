@@ -1,12 +1,11 @@
 # RNAinformer
 
-This repository contains the source code to [*RNAinformer: Generative RNA Design with Tertiary Interactions*]
+This repository contains the source code to RNAinformer: Generative RNA Design with Tertiary Interactions.
 
 
 
 ### Install virtual environment
 
-. Support for Turing GPUs (T4, RTX 2080) is coming soon. 
 
 ```
 conda env create -f environment.yml
