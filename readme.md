@@ -14,7 +14,7 @@ conda env create -f environment.yml
 conda activate rnadesign
 
 ```
-The Flash Attention package currently requires a Ampere, Ada, or Hopper GPU (e.g., A100, RTX 3090, RTX 4090, H100). To install Falsh-attn.
+The Flash Attention package currently requires an Ampere, Ada, or Hopper GPU (e.g., A100, RTX 3090, RTX 4090, H100). To install Falsh-attn.
 
 ```
 pip install -U --no-cache-dir flash-attn==2.3.4
@@ -31,21 +31,21 @@ git clone https://github.com/HazyResearch/flash-attention \
     && cd csrc/ft_attention && pip install . && cd ../../ \
     && cd .. && rm -rf flash-attention
 ```
-### Data
-Download and unzip data from https://www.dropbox.com/scl/fi/yaxvlsloht21i7bho2tim/data.tar.xz?rlkey=jmxqbjjcmbumt08hk2tbqxvgg&st=dy7xizw6&dl=0
+### Datasets
+To get the training and test sets download and unzip data from https://www.dropbox.com/scl/fi/yaxvlsloht21i7bho2tim/data.tar.xz?rlkey=jmxqbjjcmbumt08hk2tbqxvgg&st=k9jfe7iz&dl=0
 
 ### Models and predictions
-Download and unzip data from
+To get the models and designed predictions download and unzip data from https://www.dropbox.com/scl/fi/4ti5cn1zuct5u37rzkpod/runs.tar.xz?rlkey=jfu6trrvnr9d118mrsecgquzp&st=eccnnqy8&dl=0
 
 ### Evaluate 
-Evaluation metrics have been provided for all model and competitiors in respective metrics.csv files
+Evaluation metrics have been provided for all model and competitors in respective metrics.csv files
 To run all evaluations again
 
 ```
 bash run_evaluation.sh
 ```
 
-### Infernece on test sets
+### Inference on test sets
 ```
 python inference.py --seed 9647359 --path path/to/model/folder/
 ```
