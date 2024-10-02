@@ -5,42 +5,7 @@ from collections import defaultdict
 from scipy import signal
 import torch
 import matplotlib.pyplot as plt
-from grakel import Graph
-from grakel.kernels import WeisfeilerLehman, VertexHistogram, WeisfeilerLehmanOptimalAssignment, ShortestPath
 
-def graph_distance_score_from_matrices(pred, true, kernel="WeisfeilerLehman", node_labels=None):
-    pred_graph = mat2graph(pred, node_labels=node_labels)
-    true_graph = mat2graph(true, node_labels=node_labels)
-    kernel = get_graph_kernel(kernel=kernel)
-    kernel.fit_transform([true_graph])
-    distance_score = kernel.transform([pred_graph])  # TODO: Check output, might be list or list of lists
-
-    return distance_score[0][0]
-
-
-def get_graph_kernel(kernel, n_iter=5, normalize=True):
-    if kernel == 'WeisfeilerLehman':
-        return WeisfeilerLehman(n_iter=n_iter,
-                                normalize=normalize,
-                                base_graph_kernel=VertexHistogram)
-    elif kernel == 'WeisfeilerLehmanOptimalAssignment':
-        return WeisfeilerLehmanOptimalAssignment(n_iter=n_iter,
-                                                 normalize=normalize)
-    elif kernel == 'ShortestPath':
-        return ShortestPath(normalize=normalize)
-
-
-def mat2graph(matrix, node_labels=None):
-    if node_labels is not None:
-        graph = Graph(initialization_object=matrix.astype(int),
-                      node_labels=node_labels)  # TODO: Think about if we need to label the nodes differenty
-    else:
-        graph = Graph(initialization_object=matrix.astype(int),
-                      node_labels={s: str(s) for s in
-                                   range(
-                                       matrix.shape[0])})  # TODO: Think about if we need to label the nodes differenty
-
-    return graph
 
 def db2pairs(structure, start_index=0):
     """

@@ -26,13 +26,13 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
     except:
         print(len(preds), len(test_data))
         raise
-    if type(preds[0][0]) == list:
-        for i in range(len(test_data)):
-            length = test_data[i]['length']
-            preds[i] = [pairs2mat(pred, length, no_pk=True) for pred in preds[i]]
     if type(preds[0][0]) == str:
         for i in range(len(test_data)):
             preds[i] = [db2mat(pred) for pred in preds[i]]
+    elif type(preds[0][0]) == list:
+        for i in range(len(test_data)):
+            length = test_data[i]['length']
+            preds[i] = [pairs2mat(pred, length, no_pk=True) for pred in preds[i]]
     ds_metrics = collections.defaultdict(list)
     ns_metrics = collections.defaultdict(list)
     pk_metrics = collections.defaultdict(list)
@@ -77,17 +77,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
         true_mat = mat_from_pos(test_data[i]['pos1id'], test_data[i]['pos2id'], length)
         for j, pred in enumerate(preds[i]):
             pk_info = test_data[i]['pk']
-            if has_pk or has_multiplet:
-                pred_metrics = eval_hits(torch.tensor(pred), torch.tensor(true_mat), pk_info)
-            if has_pk:
-                metrics['num_pk_hits'].append(pred_metrics['num_pk_hits'])
-                metrics['num_pk_gt'].append(pred_metrics['num_pk_gt'])
-            if has_multiplet:
-                try:
-                    metrics['num_multi_hits'].append(pred_metrics['num_multi_hits'])
-                    metrics['num_multi_gt'].append(pred_metrics['num_multi_gt'])
-                except:
-                    pass
             str_acc, hits, gt, acc = solved_from_mat(pred, true_mat)
             tp = tp_from_matrices(pred, true_mat)
             tn = tn_from_matrices(pred, true_mat)
@@ -98,8 +87,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
             metrics['specificity'].append(specificity(tp, fp, tn, fn))
             metrics['precision'].append(precision(tp, fp, tn, fn))
             metrics['mcc'].append(mcc(tp, fp, tn, fn))
-            metrics['num_hits'].append(hits)
-            metrics['num_gt'].append(gt)
             metrics['shifted_f1'].append(shifted_f1(pred, true_mat))
             metrics['acc'].append(acc)
             pred_gc = (list(seqs[i][j]).count(2) + list(seqs[i][j]).count(3))/length
@@ -111,7 +98,7 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
                 solved[i]+=1
                 seq_nc=0
                 pairs = mat2pairs(pred)
-                pred_seq = list(map(seq_itos.get, seqs[i][j].tolist()))
+                pred_seq = list(map(seq_itos.get, seqs[i][j]))
                 for p1, p2 in pairs:
                     if pred_seq[p1] + pred_seq[p2] not in canonical:
                         nc_solved[i] += 1
@@ -227,7 +214,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
     multiplet_distances = np.nan_to_num(np.array(multiplet_distances, dtype=np.float32))
     ns_distances = np.nan_to_num(np.array(ns_distances, dtype=np.float32))
     metrics={}
-    print("Candidate Diversity:", distances.mean())
     if gc:
         solved = gc_solved
         nc_solved = nc_gc_solved
@@ -237,9 +223,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
     print("valid sequences:", np.mean(solved_unique_seqs)/len(preds[0]))
     print("Valid sequences diversity:", solved_distances.mean())
     print("Valid sequences with Non-Canonical Base Pairs:", np.sum(nc_solved)/np.sum(solved))
-    print("Tasks solved with NC sequences:", np.sum(nc_solved>0))
-    print("Num of hits:", np.mean(ds_metrics["num_hits_max"]))
-    print("Num of gt:", np.mean(ds_metrics["num_gt_max"]))
     print("Max F1:", np.mean(ds_metrics["f1_max"]))
     print("Max MCC:", np.mean(ds_metrics["mcc_max"]))
     print("Mean F1:", np.mean(ds_metrics["f1"]))
@@ -251,8 +234,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
         print("No of solved pk tasks:", np.sum(pk_solved>0))
         print("Total no of pk tasks:", total_pk)
         print("Pk Solved score:", np.sum(pk_solved>0)/total_pk)
-        print("pK hits:", np.mean(pk_metrics["num_pk_hits_max"]))
-        print("pK gt:", np.mean(pk_metrics["num_pk_gt_max"]))
         if np.sum(pk_solved) > 0:
             print("valid sequences:", np.mean(pk_unique_seqs)/len(preds[0]))
             print("Valid sequences diversity:", pk_distances.mean())
@@ -265,8 +246,6 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
         print("No of solved multiplet tasks:", np.sum(multiplet_solved>0))
         print("Total no of multiplet tasks:", total_multiplets)
         print("Multiplet Solved score:", np.sum(multiplet_solved>0)/total_multiplets)
-        print("Multiplet hits:", np.mean(multi_metrics["num_multi_hits_max"]))
-        print("Multiplet gt:", np.mean(multi_metrics["num_multi_gt_max"]))
         if np.sum(multiplet_solved) > 0:
             print("valid sequences:", np.mean(multiplet_unique_seqs)/len(preds[0]))
             print("Valid sequences diversity:", multiplet_distances.mean())
@@ -283,76 +262,45 @@ def test_fold_pk_mult(preds, seqs, test_data, ds, gc):
             print("valid sequences:", np.mean(ns_unique_seqs)/len(preds[0]))
             print("Valid sequences diversity:", ns_distances.mean())
             print("Valid sequences with Non-Canonical Base Pairs:", np.sum(ns_nc_solved)/np.sum(ns_solved))
-    score_metrics = ['f1_max', 'recall_max', 'specificity_max', 'precision_max', 'mcc_max','gc_score_max','gc_score'] #,'gc_score_str','gc_score_str_max']
-    metrics['solved'] = np.sum(solved>0)
-    metrics['solved_score'] = np.sum(solved>0)/total
-    metrics['unique_seq'] = np.mean(unique_seqs)
-    metrics['unique_seq_score'] = np.mean(unique_seqs)/len(preds[0])
-    metrics['unique_seq_solved'] = np.mean(solved_unique_seqs)
-    metrics['unique_seq_solved_score'] = np.mean(solved_unique_seqs)/len(preds[0])
-    metrics['diversity'] = distances.mean()
-    metrics['solved_diversity'] = solved_distances.mean()
-    metrics['solved_nc'] = np.sum(nc_solved>0)
-    metrics['solved_nc_score'] = np.sum(nc_solved>0)/np.sum(solved>0)
-    metrics['nc_seqs'] = np.sum(nc_solved)/np.sum(solved)
-    metrics['num_hits_max'] = np.mean(ds_metrics["num_hits_max"])
-    metrics['num_gt_max'] = np.mean(ds_metrics["num_gt_max"])
-    ds_metrics['num_hits_max'] = np.array(ds_metrics["num_hits_max"])
-    ds_metrics['num_gt_max'] = np.array(ds_metrics["num_gt_max"])
-    metrics['p1_num_hits'] = np.mean(ds_metrics["num_hits_max"])/np.mean(ds_metrics["num_gt_max"])
-    metrics['p2_num_hits'] = np.mean(ds_metrics["num_hits_max"]/ds_metrics["num_gt_max"])
+    score_metrics = ['f1_max', 'recall_max', 'specificity_max', 'precision_max', 'mcc_max'] 
+    metrics['valid_seq'] = np.mean(solved_unique_seqs)/len(preds[0])
+    metrics['diversity'] = solved_distances.mean()
+    metrics['NC'] = np.sum(nc_solved)/np.sum(solved)
     if gc:
-        metrics['gc_error_str'] = 1-np.mean(gc_scores)
         metrics['gc_error'] = 1-np.mean(gc_avg_scores)
     for k in ds_metrics:
         if k in score_metrics:
             metrics[k] = np.mean(ds_metrics[k])
-    
-    metrics['solved_pk'] = np.sum(pk_solved>0)
-    metrics['solved_pk_score'] = np.sum(pk_solved>0)/total_pk
-    metrics['pk_diversity'] = pk_distances.mean()
-    metrics['unique_seq_pk'] = np.mean(pk_unique_seqs)
-    metrics['unique_seq_pk_score'] = np.mean(pk_unique_seqs)/len(preds[0])
-    metrics['solved_pk_nc'] = np.sum(pk_nc_solved>0)
-    metrics['solved_pk_nc_score'] = np.sum(pk_nc_solved>0)/np.sum(pk_solved>0)
-    metrics['pk_nc_seqs'] = np.sum(pk_nc_solved)/np.sum(pk_solved)
-    metrics['num_pk_hits_max'] = np.mean(pk_metrics["num_pk_hits_max"])
-    metrics['num_pk_gt_max'] = np.mean(pk_metrics["num_pk_gt_max"])
-    pk_metrics['num_pk_hits_max'] = np.array(pk_metrics["num_pk_hits_max"])
-    pk_metrics['num_pk_gt_max'] = np.array(pk_metrics["num_pk_gt_max"])
-    metrics['p1_pk_hits'] = np.mean(pk_metrics["num_pk_hits_max"])/np.mean(pk_metrics["num_pk_gt_max"])
-    metrics['p2_pk_hits'] = np.mean(pk_metrics["num_pk_hits_max"]/pk_metrics["num_pk_gt_max"])
-    for k in pk_metrics:
-        if k in score_metrics:
-            metrics[f"pk_{k}"] = np.mean(pk_metrics[k])
+    if total_pk > 0:
+        metrics['solved_pk'] = np.sum(pk_solved>0)/total_pk
+        metrics['pk_diversity'] = pk_distances.mean()
+        metrics['pk_valid_seq'] = np.mean(pk_unique_seqs)/len(preds[0])
+        metrics['pk_NC'] = np.sum(pk_nc_solved)/np.sum(pk_solved)
+        for k in pk_metrics:
+            if k in score_metrics:
+                metrics[f"pk_{k}"] = np.mean(pk_metrics[k])
+        if gc:
+            metrics['pk_gc_error'] = 1-np.mean(pk_metrics['gc_scores'])
+    if total_multiplets > 0:
+        metrics['solved_multiplet'] = np.sum(multiplet_solved>0)/total_multiplets
+        metrics['multiplet_diversity'] = multiplet_distances.mean()
+        metrics['multiplet_valid_seq'] = np.mean(multiplet_unique_seqs)/len(preds[0])
+        metrics['multiplet_NC'] = np.sum(multiplet_nc_solved)/np.sum(multiplet_solved)
+        for k in multi_metrics:
+            if k in score_metrics:
+                metrics[f"multiplet_{k}"] = np.mean(multi_metrics[k])
+        if gc:
+            metrics['multiplet_gc_error'] = 1-np.mean(multi_metrics['gc_scores'])
+    if total_ns > 0:
+        metrics['solved_ns'] = np.sum(ns_solved>0)/total_ns
+        metrics['ns_diversity'] = ns_distances.mean()
+        metrics['ns_valid_seq'] = np.mean(ns_unique_seqs)/len(preds[0])
+        metrics['ns_NC'] = np.sum(ns_nc_solved)/np.sum(ns_solved)
+        for k in ns_metrics:
+            if k in score_metrics:
+                metrics[f"ns_{k}"] = np.mean(ns_metrics[k])
+        if gc:
+            metrics['ns_gc_error'] = 1-np.mean(ns_metrics['gc_scores'])
 
-    metrics['solved_multiplet'] = np.sum(multiplet_solved>0)
-    metrics['solved_multiplet_score'] = np.sum(multiplet_solved>0)/total_multiplets
-    metrics['multiplet_diversity'] = multiplet_distances.mean()
-    metrics['unique_seq_multiplet'] = np.mean(multiplet_unique_seqs)
-    metrics['unique_seq_multiplet_score'] = np.mean(multiplet_unique_seqs)/len(preds[0])
-    metrics['solved_multiplet_nc'] = np.sum(multiplet_nc_solved>0)
-    metrics['solved_multiplet_nc_score'] = np.sum(multiplet_nc_solved>0)/np.sum(multiplet_solved>0)
-    metrics['multiplet_nc_seqs'] = np.sum(multiplet_nc_solved)/np.sum(multiplet_solved)
-    metrics['num_multi_hits_max'] = np.mean(multi_metrics["num_multi_hits_max"])
-    metrics['num_multi_gt_max'] = np.mean(multi_metrics["num_multi_gt_max"])
-    multi_metrics['num_multi_hits_max'] = np.array(multi_metrics["num_multi_hits_max"])
-    multi_metrics['num_multi_gt_max'] = np.array(multi_metrics["num_multi_gt_max"])
-    metrics['p1_multi_hits'] = np.mean(multi_metrics["num_multi_hits_max"])/np.mean(multi_metrics["num_multi_gt_max"])
-    metrics['p2_multi_hits'] = np.mean(multi_metrics["num_multi_hits_max"]/multi_metrics["num_multi_gt_max"])
-    for k in multi_metrics:
-        if k in score_metrics:
-            metrics[f"multiplet_{k}"] = np.mean(multi_metrics[k])
-    metrics['solved_ns'] = np.sum(ns_solved>0)
-    metrics['solved_ns_score'] = np.sum(ns_solved>0)/total_ns
-    metrics['ns_diversity'] = ns_distances.mean()
-    metrics['unique_seq_ns'] = np.mean(ns_unique_seqs)
-    metrics['unique_seq_ns_score'] = np.mean(ns_unique_seqs)/len(preds[0])
-    metrics['solved_ns_nc'] = np.sum(ns_nc_solved>0)
-    metrics['solved_ns_nc_score'] = np.sum(ns_nc_solved>0)/np.sum(ns_solved>0)
-    metrics['ns_nc_seqs'] = np.sum(ns_nc_solved)/np.sum(ns_solved)
-    for k in ns_metrics:
-        if k in score_metrics:
-            metrics[f"ns_{k}"] = np.mean(ns_metrics[k])
    
     return metrics

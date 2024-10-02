@@ -149,7 +149,7 @@ class DataModuleRNA(pl.LightningDataModule):
                 f"Checked preprocessed data: {(self.cache_dir / self.samples_cache_file).as_posix()} does not exist.")
             self.logger.info("Start prepare data")
             self.logger.info("Here")
-            df = pd.read_pickle(self.dataframe_path)
+            df = pd.read_pickle(self.dataframe_path,compression='tar')
             df = df[df['pos1id'].apply(len) >= 1]  # remove only '.' samples, should be removed already
             df = df[df['pos1id'].apply(len) == df['pos2id'].apply(
                 len)]  # remove only '.' samples, should be removed already

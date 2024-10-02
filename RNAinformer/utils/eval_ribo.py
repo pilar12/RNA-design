@@ -1,4 +1,4 @@
-from ribo_metrics import eval_structure, eval_metrics
+from .ribo_metrics import eval_structure, eval_metrics
 from sklearn.metrics import pairwise_distances
 from RNA import fold
 import numpy as np

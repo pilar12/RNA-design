@@ -107,7 +107,7 @@ class DataModuleRibo(pl.LightningDataModule):
                 f"Checked preprocessed data: {(self.cache_dir / self.samples_cache_file).as_posix()} does not exist.")
             self.logger.info("Start prepare data")
 
-            train_df = pd.read_pickle(self.dataframe_path)
+            train_df = pd.read_pickle(self.dataframe_path,compression='tar')
             self.logger.info(f'Finished loading dataframe (shape: {train_df.shape})')
 
             train_df = train_df[train_df['target_sequence'].apply(lambda x: self.min_len <= len(x) <= self.max_len)]

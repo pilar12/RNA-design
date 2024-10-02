@@ -23,7 +23,7 @@ def infer_ribo(cfg):
     batch_size = cfg.test.batch_size
     num_samples = cfg.test.n_samples
     model = RiboDesignFormer(cfg.RNADesignFormer)
-    state_dict = torch.load(cfg.model_path,map_location="cpu")['state_dict']
+    state_dict = torch.load(cfg.model_path,map_location="cpu")
     state_dict = {k.replace("model.", ""): v for k, v in state_dict.items() if "model." in k}
     model.load_state_dict(state_dict)
     model.cuda()
@@ -78,7 +78,7 @@ def infer(cfg):
     batch_size = cfg.test.batch_size
     num_samples = cfg.test.n_samples
     model = RNADesignFormer(cfg.RNADesignFormer)
-    state_dict = torch.load(cfg.model_path,map_location="cpu")['state_dict']
+    state_dict = torch.load(cfg.model_path,map_location="cpu")
     state_dict = {k.replace("model.", ""): v for k, v in state_dict.items() if "model." in k}
     model.load_state_dict(state_dict)
     model.cuda()

@@ -7,7 +7,6 @@ import tqdm
 import argparse
 import subprocess
 import psutil
-import ray
 import os
 from .eval_utils import f1, recall, specificity, precision, mcc , db2mat, tp_from_matrices, tn_from_matrices, get_fp, get_fn, solved_from_mat
 seq_vocab = ['A', 'C', 'G', 'U', 'N']
@@ -29,9 +28,6 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
     ds_metrics = defaultdict(list)
     gc_solved = 0
     energy_solved = 0
-    if len(test_data) == len(test_preds):
-        for i in range(len(test_data)):
-            test_preds[i] = test_preds[i][:,:test_data[i]['length']]
     test_data = [test_data[i] for i in range(len(test_data)) if test_data[i]['length']<=max_len]
     test_preds = [test_preds[i] for i in range(len(test_preds)) if len(test_preds[i][0])<=max_len]
     skipped = 0
@@ -58,11 +54,10 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
         if length <= max_len:
             for seq_pred_i in pred:
                 assert len(seq_pred_i) == length
-                seq_pred = list(map(seq_itos.get, seq_pred_i.tolist()))
+                seq_pred = list(map(seq_itos.get, seq_pred_i))
                 if None in seq_pred:
                     skipped+=1
                     continue
-                
                 fold_struct_pred, fold_energy_pred = fold("".join(seq_pred))
                 fold_struct_pred = list(fold_struct_pred)
                 pred_mat = db2mat(fold_struct_pred)
@@ -75,7 +70,7 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
                 metrics['specificity'].append(specificity(tp, fp, tn, fn))
                 metrics['precision'].append(precision(tp, fp, tn, fn))
                 metrics['mcc'].append(mcc(tp, fp, tn, fn))
-                str_acc, hits, gt  = solved_from_mat(pred_mat, true_mat)
+                str_acc, hits, gt, acc  = solved_from_mat(pred_mat, true_mat)
                 gc_pred = ("".join(seq_pred).count('G') + "".join(seq_pred).count('C')) / len(seq_pred)
                 gc_values.append(gc_pred)
                 gc_target = test_data[i]['gc_content']
@@ -106,7 +101,7 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
                     gc_solved+=1
                     gc_nsolved.append(gc_count)
             gc_solved_values.append(gc_solved_value)
-            pred = np.array(pred)
+            pred = np.array(pred).astype(np.int32)
             pred = np.unique(pred,axis=0)
             unique.append(len(pred))
             dist = pairwise_distances(pred,metric='hamming')
@@ -125,8 +120,7 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
         solved = gc_solved         
     distances = np.nan_to_num(np.array(distances, dtype=np.float32))
     solved_dist = np.nan_to_num(np.array(solved_dist, dtype=np.float32))
-    print(f"skiped: {skipped}")
-    print(f"No of solved seq: {solved}")
+    print(f"No of solved: {solved}")
     print(f"solved%: {solved/(total)}")
     if gc:
         print(f"GC-content error for structure solved: {1-np.mean(gc_scores)}")
@@ -141,14 +135,9 @@ def test_fold(test_preds,test_data, max_len=800, gc=False):
             metrics[k] = np.mean(ds_metrics[k])
     for k in metrics.keys():
         print(f"{k}: {metrics[k]}")
-    metrics['solved'] = solved
-    metrics['solved_score'] = solved/(total)
-    metrics['diversity'] = np.mean(distances)
-    metrics['solved_diversity'] = np.mean(solved_dist)
-    metrics['unique_seq'] = np.mean(unique)
-    metrics['unique_seq_score'] = np.mean(unique)/len(test_preds[0])
-    metrics['unique_solved_seq'] = np.mean(solved_unique)
-    metrics['unique_solved_seq_score'] = np.mean(solved_unique)/len(test_preds[0])
+    metrics['solved'] = solved/(total)
+    metrics['diversity'] = np.mean(solved_dist)
+    metrics['valid_seq'] = np.mean(solved_unique)/len(test_preds[0])
     if gc:
         metrics['gc_error_str'] = 1-np.mean(gc_scores)
         metrics['gc_error'] = 1-np.mean(gc_avg_scores)
