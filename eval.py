@@ -21,9 +21,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
     if args.v is not None:
         if args.gc:
-            args.path+= f"runs/{args.ds}_gc/version_{args.v}/predictions/gc/"
+            args.path = f"runs/{args.ds}_gc/version_{args.v}/predictions/gc/"
         else:
             args.path = f"runs/{args.ds}/version_{args.v}/predictions/"
+    if args.ds == 'riboswitch':
+        if args.gc:
+            args.path = f"runs/ribo_gc/version_{args.v}/predictions_20/gc/"
+        else:
+            args.path = f"runs/ribo/version_{args.v}/predictions_20/"
+    model = args.path.split('/')[1:3]
+    print(f'Evaluating model {model} on {args.ds} dataset')
     sys.stdout = open(args.path+f"test_results.txt", "w")
     metrics = defaultdict(list)
     if args.ds == 'rfam' or args.ds == 'syn_ns':
@@ -57,12 +64,12 @@ if __name__ == '__main__':
         print("*"*20)
     elif args.ds == 'riboswitch':
         if args.gc:
-            preds = torch.load(args.path+"/ribo_outputs_gc.plk.gz",compression='tar')
+            preds = pd.read_pickle(args.path+"/ribo_outputs_gc.plk.gz",compression='tar')
             gc_targets = preds['gc'].unique()
             for gc in gc_targets:
                 print(f"Target GC content: {gc}")
                 t_preds = preds[preds['gc']==gc]
-                t_preds = [t_preds[t_preds['id']==i]['sequence'].values.tolist() for i in range(len(t_preds)/20)]
+                t_preds = [t_preds[t_preds['id']==i]['sequence'].values.tolist() for i in range(int(len(t_preds)/20))]
                 gc_metrics = eval_ribo(t_preds, args.path, gc)
                 metrics['gc'].append(gc)
                 for k in gc_metrics.keys():
@@ -71,8 +78,8 @@ if __name__ == '__main__':
             df=pd.DataFrame(metrics)
             df.to_csv(args.path+"/metrics.csv")
         else:
-            preds = preds = torch.load(args.path+"/ribo_outputs.plk.gz",compression='tar')
-            preds = [preds[preds['id']==i]['sequence'].values.tolist() for i in range(len(preds)/20)]
+            preds = preds = pd.read_pickle(args.path+"/ribo_outputs.plk.gz",compression='tar')
+            preds = [preds[preds['id']==i]['sequence'].values.tolist() for i in range(int(len(preds)/20))]
             metrics=eval_ribo(preds, args.path)
             df=pd.DataFrame(metrics,index=[0])
             df.to_csv(args.path+"/metrics.csv")
@@ -99,8 +106,6 @@ if __name__ == '__main__':
             for k in ds_metrics.keys():
                 metrics[k].append(ds_metrics[k])
             print("*"*20)
-    for k in metrics.keys():
-        print(f"{k}: {len(metrics[k])}")
     df=pd.DataFrame(metrics)
     df.to_csv(args.path+"/metrics.csv")
     sys.stdout.close()

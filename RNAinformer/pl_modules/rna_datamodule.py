@@ -6,7 +6,7 @@ import torch
 from torch.utils.data import DataLoader
 import pandas as pd
 
-from RNAinformer.utils.data.rna import IndexDataset, CollatorRNADesignMat, TokenBasedRandomSampler, CollatorRNADesign
+from RNAinformer.utils.data.rna import IndexDataset, CollatorRNADesignMat, TokenBasedRandomSampler
 
 IGNORE_INDEX = -100
 PAD_INDEX = 0
@@ -133,11 +133,7 @@ class DataModuleRNA(pl.LightningDataModule):
 
         self.rng = np.random.RandomState(self.seed)
         self.matrix_collate = matrix_collate
-        if self.matrix_collate:
-            self.collator = CollatorRNADesignMat(self.pad_index, self.ignore_index)
-        else:
-            self.collator = CollatorRNADesign(self.pad_index, self.ignore_index)
-        
+        self.collator = CollatorRNADesignMat(self.pad_index, self.ignore_index)
 
         self.valid_sets = valid_sets
         self.test_sets = test_sets

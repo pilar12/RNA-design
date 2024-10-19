@@ -83,7 +83,7 @@ def infer(cfg):
     model.load_state_dict(state_dict)
     model.cuda()
     model.eval()
-    output_path = cfg.path + f'/predictions_{num_samples}/'
+    output_path = cfg.path + f'/predictions/'
     if cfg.gc:
         output_path += "gc/"
     elif cfg.energy:
@@ -167,6 +167,7 @@ if __name__ == '__main__':
     parser.add_argument('--energy', type=bool, default=False)
     parser.add_argument('--greedy', type=bool, default=False)
     parser.add_argument('--constrained_generation',type=bool, default=False)
+    parser.add_argument('--flash', type=bool, default=True)
 
     args, unknown_args = parser.parse_known_args()    
     config_file = os.path.join(args.path,'config.yaml')
@@ -193,6 +194,8 @@ if __name__ == '__main__':
    
     config_dict['model_path'] = model_path
     config_dict['config_path'] = config_file
+    if not args.flash:
+        config_dict['RNADesignFormer']['flash'] = False
     cfg = Config(config_dict=config_dict)
     with torch.no_grad():
         if args.constrained_generation :

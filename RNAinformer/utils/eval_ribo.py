@@ -26,8 +26,8 @@ def eval_ribo(preds, path, gc_target=None, e_target=None):
         solved_seqs = []
         seqs = []
         for pred in preds[i]:
-            seqs.append(pred.tolist())
-            seq = "".join(list(map(seq_itos.get, pred.tolist())))
+            seqs.append(pred)
+            seq = "".join(list(map(seq_itos.get, pred)))
             struct, energy = fold(seq)
             result = eval_structure(seq, struct)
             result['energy'] = energy
@@ -40,14 +40,14 @@ def eval_ribo(preds, path, gc_target=None, e_target=None):
                 if abs(gc - gc_target) <= gc_tolerance:
                     result['valid_gc'] = True
                     if result['valid_sequence_and_structure']:
-                        solved_seqs.append(pred.tolist())
+                        solved_seqs.append(pred)
                 else:
                     result['valid_gc'] = False
                 result['gc_score'] = 1 - abs(gc - gc_target)
                 gc_score.append(result['gc_score'])
             else:
                 if result['valid_sequence_and_structure']:
-                    solved_seqs.append(pred.tolist())
+                    solved_seqs.append(pred)
             if e_target is not None:
                 if abs(energy - e_target) <= energy_tolerance:
                     result['valid_energy'] = True
